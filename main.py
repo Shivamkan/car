@@ -5,12 +5,13 @@ pygame.init()
 
 screen_size = (800, 600)
 screen = pygame.display.set_mode(screen_size, vsync=True)
-
-max_speed = 5
+friction = 0.9
+car_power = 1
+zoom = 0.5
 
 
 def handle_events():
-    keys = {'left': False, 'right': False, 'up': False, 'down': False}
+    keys = {'left': False, 'right': False, 'up': False, 'down': False, "reset": False}
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -24,29 +25,35 @@ def handle_events():
         keys['up'] = True
     if pygame_keys[pygame.K_DOWN] or pygame_keys[pygame.K_s]:
         keys['down'] = True
+    if pygame_keys[pygame.K_r]:
+        keys['reset'] = True
     return keys
 
 
 class car:
     def __init__(self, x, y, stearing, angle):
         self.pos = pygame.Vector2(x, y)
-        self.size = pygame.Vector2(100, 50)
+        self.size = pygame.Vector2(100, 50) * zoom
         self.angle = angle
         self.speed = 0
         self.dir = pygame.Vector2(1, 0).rotate(self.angle)
         self.stearing = stearing
         self.carbody = pygame.image.load('carbody.png')
-        self.carbody = pygame.transform.scale(self.carbody, self.size)
+        self.carbody = pygame.transform.scale(self.carbody, (int(self.size.x), int(self.size.y)))
+        self.acceleration = 0.0
 
     def draw(self, screen):
         tempsurf = pygame.transform.rotate(self.carbody, self.angle)
         screen.blit(tempsurf, self.pos - pygame.Vector2(tempsurf.get_rect().size) / 2)
 
     def update(self, keys):
+        self.acceleration = 0.0
         if keys['up']:
-            self.speed = max_speed
+            self.acceleration = car_power*zoom
         if keys['down']:
-            self.speed = -max_speed
+            self.acceleration = -car_power*zoom
+        self.speed += self.acceleration
+        self.speed *= friction
 
         current_steering = 0
         if keys['left']:
@@ -56,18 +63,18 @@ class car:
         front_wheel, back_wheel = self.calcwheel()
         # print(front_wheel)
         back_wheel = back_wheel + self.speed * self.dir
-        print(current_steering)
+        # print(current_steering)
         temp = pygame.Vector2(front_wheel)
         front_wheel += pygame.Vector2(self.dir).rotate(current_steering).normalize() * self.speed
-        print(front_wheel - temp if front_wheel - temp != 0 else "", end="")
+        # print(front_wheel - temp if front_wheel - temp != 0 else "", end="")
         dir = front_wheel - back_wheel
         self.dir = dir.normalize()
         self.pos = (front_wheel + back_wheel) / 2
         self.angle = -dir.as_polar()[1]
 
-        pygame.draw.circle(screen, (255, 0, 0), self.pos, 5)
-        pygame.draw.circle(screen, (0, 255, 0), front_wheel, 5)
-        pygame.draw.circle(screen, (0, 0, 255), back_wheel, 5)
+        # pygame.draw.circle(screen, (255, 0, 0), self.pos, 5)
+        # pygame.draw.circle(screen, (0, 255, 0), front_wheel, 5)
+        # pygame.draw.circle(screen, (0, 0, 255), back_wheel, 5)
 
     def rotateAnim(self):
         self.angle += 1
@@ -80,14 +87,16 @@ class car:
         return front_wheel, back_wheel
 
 
-car = car(500, 300, 15, 180)
+mycar = car(500, 300, 20, 180)
 clock = pygame.time.Clock()
 
 while True:
     clock.tick(60)
     screen.fill((100, 100, 100))
     keys = handle_events()
+    if keys['reset']:
+        mycar = car(500, 300, 20, 180)
     # print(keys)
-    car.draw(screen)
-    car.update(keys)
+    mycar.draw(screen)
+    mycar.update(keys)
     pygame.display.flip()
