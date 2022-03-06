@@ -32,9 +32,9 @@ class car:
         self.pos = pygame.Vector2(x, y)
         self.size = pygame.Vector2(100, 50)
         self.angle = angle
+        self.speed = 0
         self.dir = pygame.Vector2(1, 0).rotate(self.angle)
         self.stearing = stearing
-        self.speed = pygame.Vector2(0, 0)
         self.carbody = pygame.image.load('carbody.png')
         self.carbody = pygame.transform.scale(self.carbody, self.size)
 
@@ -43,11 +43,10 @@ class car:
         screen.blit(tempsurf, self.pos - pygame.Vector2(tempsurf.get_rect().size) / 2)
 
     def update(self, keys):
-        self.speed = pygame.Vector2()
         if keys['up']:
-            self.speed = pygame.Vector2(1, 0).rotate(self.angle) * max_speed
+            self.speed = max_speed
         if keys['down']:
-            self.speed = pygame.Vector2(1, 0).rotate(self.angle) * -max_speed
+            self.speed = -max_speed
 
         current_steering = 0
         if keys['left']:
@@ -56,16 +55,12 @@ class car:
             current_steering += self.stearing
         front_wheel, back_wheel = self.calcwheel()
         # print(front_wheel)
-        back_wheel = back_wheel + self.speed
+        back_wheel = back_wheel + self.speed * self.dir
         print(current_steering)
         temp = pygame.Vector2(front_wheel)
-        front_wheel += pygame.Vector2(self.dir).rotate(current_steering).normalize() * self.speed.length()
+        front_wheel += pygame.Vector2(self.dir).rotate(current_steering).normalize() * self.speed
         print(front_wheel - temp if front_wheel - temp != 0 else "", end="")
         dir = front_wheel - back_wheel
-        if keys['up']:
-            self.speed = dir.normalize() * max_speed
-        if keys['down']:
-            self.speed = dir.normalize() * -max_speed
         self.dir = dir.normalize()
         self.pos = (front_wheel + back_wheel) / 2
         self.angle = -dir.as_polar()[1]
