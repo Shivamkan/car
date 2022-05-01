@@ -6,8 +6,9 @@ pygame.init()
 
 screen_size = (800, 600)
 screen = pygame.display.set_mode(screen_size, vsync=True)
-friction = 0.95
-car_power = 0.6
+friction = 0.03
+drag = 0.06
+car_power = 0.5
 zoom = 0.5
 traction = 1.5
 
@@ -60,8 +61,12 @@ class car:
 			if keys['down']:
 				self.acceleration = -car_power * zoom
 		self.speed += self.acceleration
-		self.speed *= friction
-		if self.speed < 0.01 and self.speed > -0.01:
+		if self.speed >= friction:
+			self.speed -= friction
+		elif self.speed <= -friction:
+			self.speed += friction
+		self.speed *= (1 - drag)
+		if self.speed <= 0.01 and self.speed >= -0.01:
 			self.speed = 0
 		
 		current_steering = 0
@@ -99,12 +104,15 @@ class car:
 		return front_wheel, back_wheel
 
 
-mycar = car(500, 300, 20, 180)
+mycar = car(500, 300, 30, 180)
 clock = pygame.time.Clock()
+map = pygame.image.load('map.png')
+map = pygame.transform.scale(map,(800,600))
 
 while True:
 	clock.tick(60)
 	screen.fill((100, 100, 100))
+	screen.blit(map,(0,0))
 	keys = handle_events()
 	if keys['reset']:
 		mycar = car(500, 300, 30, 180)
