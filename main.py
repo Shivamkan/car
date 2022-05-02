@@ -47,6 +47,8 @@ class map:
 		self.wall1, self.wall2 = self.colide_lines(*self.list_of_lines)
 		self.load_next_map(zoom)
 
+
+
 	def load_next_map(self, zoom):
 		width = 80*zoom
 		temp = self.load_from_json(self.loaded_map + 1)
@@ -68,6 +70,8 @@ class map:
 		if self.list_of_turns:
 			self.list_of_lines = self.calc_lines(self.list_of_turns, width)
 			self.wall1, self.wall2 = self.colide_lines(*self.list_of_lines)
+			self.startangle = (vector2(self.list_of_turns[1]) - vector2(self.list_of_turns[0])).normalize().as_polar()[1]
+			self.startpos = vector2(self.list_of_turns[0])
 
 	def calc_lines(self,list_of_points, road_width):
 		lines1 = []
@@ -220,11 +224,11 @@ class car:
 		return front_wheel, back_wheel
 
 
-mycar = car(500, 300, 30, 180)
+Map = map()
+mycar = car(*Map.startpos.xy, 20, Map.startangle)
 clock = pygame.time.Clock()
 # map = pygame.image.load('map.png')
 # map = pygame.transform.scale(map,(800,600))
-Map = map()
 
 while True:
 	clock.tick(60)
@@ -233,9 +237,10 @@ while True:
 	# screen.blit(map,(0,0))
 	keys = handle_events()
 	if keys['reset']:
-		mycar = car(500, 300, 30, 180)
+		mycar = car(*Map.startpos.xy, 20, Map.startangle)
 	if keys['load_next']:
 		Map.load_next_map(zoom)
+		mycar = car(*Map.startpos.xy, 20, Map.startangle)
 
 	# print(keys)
 	mycar.draw(screen)
