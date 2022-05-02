@@ -10,8 +10,8 @@ screen_size = (800, 600)
 screen = pygame.display.set_mode(screen_size, vsync=True)
 friction = 0.03
 drag = 0.06
-car_power = 0.5
-zoom = 0.3
+car_power = 0.2
+zoom = 1
 traction = 1.5
 
 
@@ -45,9 +45,10 @@ class map:
 		self.list_of_turns = []
 		self.list_of_lines = self.calc_lines(self.list_of_turns, 80)
 		self.wall1, self.wall2 = self.colide_lines(*self.list_of_lines)
-		self.load_next_map()
+		self.load_next_map(zoom)
 
-	def load_next_map(self):
+	def load_next_map(self, zoom):
+		width = 80*zoom
 		temp = self.load_from_json(self.loaded_map + 1)
 		if temp != "too large" and temp != "File does not exist":
 			self.list_of_turns = temp
@@ -62,8 +63,10 @@ class map:
 				print("Map " + str(self.loaded_map + 1) + " does not exist.", end=" ")
 				print("No Map Are Made")
 				loaded_map = 0
+		for x in range(len(self.list_of_turns)):
+			self.list_of_turns[x] = (self.list_of_turns[x][0] * zoom, self.list_of_turns[x][1] * zoom)
 		if self.list_of_turns:
-			self.list_of_lines = self.calc_lines(self.list_of_turns, 80)
+			self.list_of_lines = self.calc_lines(self.list_of_turns, width)
 			self.wall1, self.wall2 = self.colide_lines(*self.list_of_lines)
 
 	def calc_lines(self,list_of_points, road_width):
@@ -151,7 +154,7 @@ class map:
 class car:
 	def __init__(self, x, y, stearing, angle):
 		self.pos = pygame.Vector2(x, y)
-		self.size = pygame.Vector2(100, 50) * zoom
+		self.size = pygame.Vector2(25, 12) * zoom
 		self.angle = angle
 		self.speed = 0
 		self.dir = pygame.Vector2(1, 0).rotate(self.angle)
@@ -232,7 +235,7 @@ while True:
 	if keys['reset']:
 		mycar = car(500, 300, 30, 180)
 	if keys['load_next']:
-		Map.load_next_map()
+		Map.load_next_map(zoom)
 
 	# print(keys)
 	mycar.draw(screen)
