@@ -1,6 +1,8 @@
 import pygame
 import sys
-import math
+from pygame import Vector2 as vector2
+import json
+import os
 
 pygame.init()
 
@@ -9,7 +11,7 @@ screen = pygame.display.set_mode(screen_size, vsync=True)
 friction = 0.03
 drag = 0.06
 car_power = 0.5
-zoom = 0.5
+zoom = 0.3
 traction = 1.5
 
 
@@ -34,6 +36,113 @@ def handle_events():
 		keys['brake'] = True
 	return keys
 
+class map:
+	def __init__(self):
+		self.loaded_map = 0
+		self.list_of_turns = []
+		self.list_of_lines = self.calc_lines(self.list_of_turns, 80)
+		self.wall1, self.wall2 = self.colide_lines(*self.list_of_lines)
+
+
+		temp = self.load_from_json(self.loaded_map + 1)
+		if temp != "too large" and temp != "File does not exist":
+			self.list_of_turns = temp
+			self.loaded_map += 1
+		else:
+			if self.loaded_map != 0:
+				print("Map " + str(self.loaded_map + 1) + " does not exist.")
+				self.loaded_map = 0
+				list_of_turns = self.load_from_json(self.loaded_map + 1)
+				self.loaded_map += 1
+			else:
+				print("Map " + str(self.loaded_map + 1) + " does not exist.", end=" ")
+				print("No Map Are Made")
+				loaded_map = 0
+		if self.list_of_turns:
+			self.list_of_lines = self.calc_lines(self.list_of_turns, 80)
+			self.wall1, self.wall2 = self.colide_lines(*self.list_of_lines)
+
+	def calc_lines(self,list_of_points, road_width):
+		lines1 = []
+		lines2 = []
+		for i in range(len(list_of_points)):
+			if i == len(list_of_points) - 1:
+				i = -1
+			temp = ((vector2(list_of_points[i + 1]) - vector2(list_of_points[i])).normalize()).rotate(
+				90) * road_width / 2
+			point1 = vector2(list_of_points[i]) + temp
+			point2 = vector2(list_of_points[i + 1]) + temp
+			lines1.append((point1, point2))
+			temp = ((vector2(list_of_points[i + 1]) - vector2(list_of_points[i])).normalize()).rotate(
+				-90) * road_width / 2
+			point1 = vector2(list_of_points[i]) + temp
+			point2 = vector2(list_of_points[i + 1]) + temp
+			lines2.append((point1, point2))
+		return lines1, lines2
+
+	def colide_lines(self,lines1, lines2):
+		point_in = []
+		for x in range(len(lines1)):
+			if x == len(lines1) - 1:
+				x = -1
+			x1 = lines1[x][0].x
+			x2 = lines1[x][1].x
+			y1 = lines1[x][0].y
+			y2 = lines1[x][1].y
+			x3 = lines1[x + 1][0].x
+			x4 = lines1[x + 1][1].x
+			y3 = lines1[x + 1][0].y
+			y4 = lines1[x + 1][1].y
+			dnom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+			if dnom == 0:
+				continue
+			point_x = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / dnom
+			point_y = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / dnom
+			point_in.append(vector2(point_x, point_y))
+		point_out = []
+		for x in range(len(lines2)):
+			if x == len(lines2) - 1:
+				x = -1
+			x1 = lines2[x][0].x
+			x2 = lines2[x][1].x
+			y1 = lines2[x][0].y
+			y2 = lines2[x][1].y
+			x3 = lines2[x + 1][0].x
+			x4 = lines2[x + 1][1].x
+			y3 = lines2[x + 1][0].y
+			y4 = lines2[x + 1][1].y
+			dnom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+			if dnom == 0:
+				continue
+			point_x = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / dnom
+			point_y = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / dnom
+			point_out.append(vector2(point_x, point_y))
+		return point_in, point_out
+
+	def draw(self,wall1, wall2, screen):
+		if len(wall1) >= 2 and len(wall2) >= 2:
+			pygame.draw.polygon(screen, (0,0,0), wall1, 3)
+			pygame.draw.polygon(screen, (0,0,0), wall2, 3)
+
+	def load_from_json(self,file_num):
+		print("Loading map" + str(file_num))
+		list_of_files = os.listdir("maps")
+		largest_number = 0
+		for x in list_of_files:
+			try:
+				num = int((x.split(".")[0]).split('map')[-1])
+				largest_number = max(largest_number, num)
+			except:
+				continue
+		if file_num > largest_number:
+			return "too large"
+		elif file_num < 1:
+			return "File does not exist"
+		elif "map" + str(file_num) + ".json" in list_of_files:
+			file = open("maps/map" + str(file_num) + ".json", "rt")
+			return json.loads(file.read())
+		else:
+			return "File does not exist"
 
 class car:
 	def __init__(self, x, y, stearing, angle):
@@ -106,13 +215,15 @@ class car:
 
 mycar = car(500, 300, 30, 180)
 clock = pygame.time.Clock()
-map = pygame.image.load('map.png')
-map = pygame.transform.scale(map,(800,600))
+# map = pygame.image.load('map.png')
+# map = pygame.transform.scale(map,(800,600))
+Map = map()
 
 while True:
 	clock.tick(60)
 	screen.fill((100, 100, 100))
-	screen.blit(map,(0,0))
+	Map.draw(Map.wall1,Map.wall2,screen)
+	# screen.blit(map,(0,0))
 	keys = handle_events()
 	if keys['reset']:
 		mycar = car(500, 300, 30, 180)
