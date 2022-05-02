@@ -134,7 +134,7 @@ while True:
 					selected_point = -1
 				else:
 					if loaded_map != 0:
-						print("Map "+str(loaded_map+1)+" does not exist.",end=" ")
+						print("Map "+str(loaded_map+1)+" does not exist.")
 						loaded_map = 0
 						list_of_turns = load_from_json(loaded_map + 1)
 						loaded_map += 1
@@ -146,6 +146,26 @@ while True:
 				if list_of_turns:
 					list_of_lines = calc_lines(list_of_turns, 80)
 					wall1, wall2 = colide_lines(*list_of_lines)
+
+			if event.key == pygame.K_d:
+				if loaded_map != 0:
+					print("Deleting map"+str(loaded_map))
+					os.remove("maps/map"+str(loaded_map)+".json")
+					x = loaded_map+1
+					while x>0:
+						list_of_files = os.listdir("maps")
+						if "map"+str(x)+".json" in list_of_files:
+							os.rename("maps/map"+str(x)+".json","maps/map"+str(x-1)+".json")
+							x += 1
+						else:
+							x = -1
+					list_of_turns = []
+					list_of_lines = calc_lines(list_of_turns, 80)
+					wall1, wall2 = colide_lines(*list_of_lines)
+					selected_point = -1
+					loaded_map = 0
+				else:
+					print("No Map Is Selected")
 				
 		if event.type == pygame.MOUSEBUTTONDOWN:
 			if loaded_map != 0:
