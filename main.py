@@ -16,11 +16,14 @@ traction = 1.5
 
 
 def handle_events():
-	keys = {'left': False, 'right': False, 'up': False, 'down': False, "reset": False, 'brake': False}
+	keys = {'left': False, 'right': False, 'up': False, 'down': False, "reset": False, 'brake': False, 'load_next': False}
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
 			pygame.quit()
 			sys.exit()
+		if event.type == pygame.KEYDOWN:
+			if event.key == pygame.K_l:
+				keys['load_next'] = True
 	pygame_keys = pygame.key.get_pressed()
 	if pygame_keys[pygame.K_LEFT] or pygame_keys[pygame.K_a]:
 		keys['left'] = True
@@ -42,8 +45,9 @@ class map:
 		self.list_of_turns = []
 		self.list_of_lines = self.calc_lines(self.list_of_turns, 80)
 		self.wall1, self.wall2 = self.colide_lines(*self.list_of_lines)
+		self.load_next_map()
 
-
+	def load_next_map(self):
 		temp = self.load_from_json(self.loaded_map + 1)
 		if temp != "too large" and temp != "File does not exist":
 			self.list_of_turns = temp
@@ -52,7 +56,7 @@ class map:
 			if self.loaded_map != 0:
 				print("Map " + str(self.loaded_map + 1) + " does not exist.")
 				self.loaded_map = 0
-				list_of_turns = self.load_from_json(self.loaded_map + 1)
+				self.list_of_turns = self.load_from_json(self.loaded_map + 1)
 				self.loaded_map += 1
 			else:
 				print("Map " + str(self.loaded_map + 1) + " does not exist.", end=" ")
@@ -227,6 +231,9 @@ while True:
 	keys = handle_events()
 	if keys['reset']:
 		mycar = car(500, 300, 30, 180)
+	if keys['load_next']:
+		Map.load_next_map()
+
 	# print(keys)
 	mycar.draw(screen)
 	mycar.update(keys)
