@@ -63,6 +63,8 @@ def draw(wall1, wall2, screen):
 	if len(wall1) >= 2 and len(wall2) >= 2:
 		pygame.draw.polygon(screen, (255,255,255), wall1, 3)
 		pygame.draw.polygon(screen, (255,255,255), wall2, 3)
+	if len(wall1)>0 and len(wall2) >0:
+		pygame.draw.line(screen, (255, 0, 0), wall1[0], wall2[0], 3)
 		
 def save_to_json(list_of_turns):
 	list_of_files = os.listdir("maps")
