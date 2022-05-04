@@ -58,7 +58,6 @@ def colide_lines(lines1, lines2):
 		point_out.append(vector2(point_x,point_y))
 	return point_in,point_out
 		
-	
 def draw(wall1, wall2, screen):
 	if len(wall1) >= 2 and len(wall2) >= 2:
 		pygame.draw.polygon(screen, (255,255,255), wall1, 3)

@@ -8,6 +8,7 @@ pygame.init()
 
 screen_size = (800, 600)
 screen = pygame.display.set_mode(screen_size, vsync=True)
+world = pygame.Surface((screen_size[0]*2,screen_size[1]*2))
 friction = 0.03
 drag = 0.06
 car_power = 0.2
@@ -67,15 +68,15 @@ class map:
 		self.list_of_lines = self.calc_lines(self.list_of_turns, 80)
 		self.wall1, self.wall2 = self.colide_lines(*self.list_of_lines)
 		self.checkpoints = []
-		self.load_next_map(zoom)
+		self.load_next_map()
 
 	def get_checkpoints(self):
 		self.checkpoints = []
 		for x in range(len(self.wall1)):
 			self.checkpoints.append((self.wall1[x],self.wall2[x]))
 
-	def load_next_map(self, zoom):
-		width = 80*zoom
+	def load_next_map(self):
+		width = 80
 		temp = self.load_from_json(self.loaded_map + 1)
 		if temp != "too large" and temp != "File does not exist":
 			self.list_of_turns = temp
@@ -91,7 +92,7 @@ class map:
 				print("No Map Are Made")
 				loaded_map = 0
 		for x in range(len(self.list_of_turns)):
-			self.list_of_turns[x] = (self.list_of_turns[x][0] * zoom, self.list_of_turns[x][1] * zoom)
+			self.list_of_turns[x] = (self.list_of_turns[x][0], self.list_of_turns[x][1])
 		if self.list_of_turns:
 			self.list_of_lines = self.calc_lines(self.list_of_turns, width)
 			self.wall1, self.wall2 = self.colide_lines(*self.list_of_lines)
@@ -187,7 +188,7 @@ class map:
 class car:
 	def __init__(self, x, y, stearing, angle):
 		self.pos = pygame.Vector2(x, y)
-		self.size = pygame.Vector2(25, 12) * zoom
+		self.size = pygame.Vector2(25, 12)
 		self.angle = angle
 		self.speed = 0
 		self.dir = pygame.Vector2(1, 0).rotate(self.angle)
@@ -219,9 +220,9 @@ class car:
 			self.speed *= 0.9
 		else:
 			if keys['up']:
-				self.acceleration = car_power * zoom
+				self.acceleration = car_power
 			if keys['down']:
-				self.acceleration = -car_power * zoom
+				self.acceleration = -car_power
 		self.speed += self.acceleration
 		if self.speed >= friction:
 			self.speed -= friction
@@ -296,22 +297,28 @@ mycar = car(*Map.startpos.xy, 20, Map.startangle)
 clock = pygame.time.Clock()
 # map = pygame.image.load('map.png')
 # map = pygame.transform.scale(map,(800,600))
+cam_offset = (0,0)
 
 while True:
 	clock.tick(60)
 	screen.fill((100, 100, 100))
-	Map.draw(Map.wall1,Map.wall2,screen)
+	world.fill((100,100,100))
+	Map.draw(Map.wall1,Map.wall2,world)
 	# screen.blit(map,(0,0))
 	keys = handle_events()
 	if keys['reset']:
 		mycar = car(*Map.startpos.xy, 20, Map.startangle)
+		cam_offset = (0,0)
 	if keys['load_next']:
-		Map.load_next_map(zoom)
+		Map.load_next_map()
 		mycar = car(*Map.startpos.xy, 20, Map.startangle)
+		cam_offset = (0,0)
 
 	# print(keys)
-	mycar.draw(screen)
+	mycar.draw(world)
 	mycar.update(keys)
-	mycar.collide_checkpoint(screen, Map.checkpoints)
-	mycar.collide(Map.wall1,Map.wall2,screen)
+	mycar.collide_checkpoint(world, Map.checkpoints)
+	mycar.collide(Map.wall1,Map.wall2,world)
+	cam_offset = (- mycar.pos[0]+(screen_size[0]/2),- mycar.pos[1] + (screen_size[1]/2))
+	screen.blit(world, cam_offset)
 	pygame.display.flip()
